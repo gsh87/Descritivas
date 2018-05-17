@@ -1,0 +1,198 @@
+---
+title: "Analise Descritiva"
+author: "gsh87"
+date: "maio 2018"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+    smooth_scroll: TRUE
+---
+
+<style type="text/css">
+
+.chart-title {  /* chart_title  */
+   font-size: 20px;
+</style>
+
+
+<!-- ################################################# -->
+
+```{r,echo=FALSE,include=FALSE}
+################################### 0 - Limpeza
+# removendo lixo da memoria
+rm(list=ls())
+set.seed(123)
+```
+
+```{r,echo=FALSE,results='hide',warning=FALSE,message=FALSE}
+## 1 - Pacotes
+options(repos=c(CRAN="http://vps.fmvz.usp.br/CRAN/"))
+library(pacman)    # pacote para load das bibliotecas
+p_load(stats)     #  Modelos ARIMA
+p_load(agricolae)# testes
+p_load(lmtest)    # testes de residuos
+p_load(randtests) # pacotes de testes estatisticos
+p_load(rms)       # pacote para stepwise
+p_load(forecast)  # forecast
+p_load(smooth)    # SMA - simple moving average
+p_load(nnfor)     # neural networks for time series
+p_load(h2o)
+p_load(fBasics)   # estatistica basica
+
+p_load(fpc)      # Flexible Procedures for Clustering
+p_load(factoextra) #factoextra for visualizing clusters using ggplot2 plotting system
+p_load(cluster)   # cluster for computing pam and for analyzing cluster silhouettes
+p_load(NbClust) #NbClust for finding the optimal number of clusters
+p_load(factoextra) # numero otimo de clusters
+
+## pacotes graficos ##
+p_load(ggplot2)   # grafico
+p_load(ggthemes)  # grafico 
+p_load(gridExtra) # Graficos em matrizes
+p_load(plotly)    # interative graphics
+p_load(ggcorrplot) # correlacao
+p_load(ggExtra)     # Add marginal Histogram
+p_load(ggalt)        # circulos no ggplot
+
+## pacotes de manipulacao ##
+p_load(lubridate) # tratamento de datas
+p_load(plyr)     # empilhamento
+p_load(magrittr)   # pipeline
+p_load(dplyr)      # manipulacao de base
+p_load(knitr)       # apresentacao
+p_load(binomTools)   # extrai
+p_load(vcd)          
+p_load(DescTools)      # summary grafico
+p_load(RODBC)          # conexao ODC
+p_load(sqldf)          # sqldf
+p_load(corrplot)       # correlacao
+p_load(prais)
+p_load(Metrics)
+p_load(dummies)
+p_load(reshape2)       # empilha as colunas usando uma flag
+
+## Packages visual
+p_load(flexdashboard)
+p_load(DT)
+
+
+p_load(factoextra) #factoextra for visualizing clusters using ggplot2 plotting system
+p_load(cluster)   # cluster for computing pam and for analyzing cluster silhouettes
+p_load(NbClust) #NbClust for finding the optimal number of clusters
+
+```
+
+# Descritivas {data-orientation=rows}
+
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+p_load(datasets)
+
+Base_iris <- iris %>% mutate(
+  flag_Sep_comprimento = ifelse(Sepal.Length>=(mean(Sepal.Length)+sd(Sepal.Length)),1,0),
+  flag_Sep_largura = ifelse(Sepal.Width>=(mean(Sepal.Width)+sd(Sepal.Width)),1,0)) %>% `colnames<-`(c("Sepal_Length","Sepal_Width","Petala_Length","Petala_Width","Classificacao","flag_Sep_comprimento","flag_Sep_largura"))
+
+
+
+```
+
+Row {.tabset .tabset-fade}
+-------------------------------------
+### Descritiva
+
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+
+Descritiva <- basicStats(Base_iris[,setdiff(colnames(Base_iris),"Classificacao")]) %>% data.frame()
+datatable(Descritiva)
+```
+
+Row {.tabset .tabset-fade}
+-------------------------------------
+
+### Grafico de Contigência 
+
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+Tabela1 <- with(Base_iris,table(flag_Sep_comprimento,flag_Sep_largura))
+PTabela1 <- prop.table(Tabela1,margin=1)
+PTabela1 <- rbind(PTabela1,Soma=colSums(PTabela1)/sum(PTabela1))
+#grafico
+mosaic(Tabela1, shade=T, legend=T)
+```
+
+### Tabela de Contigência
+
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+Tabela1 <- with(Base_iris,table(flag_Sep_comprimento,flag_Sep_largura))
+PTabela1 <- prop.table(Tabela1,margin=1)
+PTabela1 <- rbind(PTabela1,Soma=colSums(PTabela1)/sum(PTabela1))
+
+datatable(PTabela1)
+```
+
+Row 
+-------------------------------------
+### Box Plot
+
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+Base_Box <- Base_iris %>% select(Sepal_Length,Sepal_Width,Petala_Length,Petala_Width) %>% melt() %>%  `colnames<-`(c("Carateristica","Valor"))
+
+Grafico11 <- ggplot(Base_Box,aes(x=Carateristica,y=Valor))+geom_boxplot(fill="royalblue",colour="blue")+labs(title="Variabilidade das caracteristicas",x="Caracteristica")
+Grafico11
+
+```
+
+
+Row 
+-------------------------------------
+### Histograma
+
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+
+Grafico12 <- ggplot(Base_iris,aes(x=Petala_Length))+
+  geom_histogram(aes(y=..density..),
+                 breaks=seq(min(Base_iris$Petala_Length)*0.8,max(Base_iris$Petala_Length)*1.1,by=3),
+                 col="blue",
+                 fill="royalblue",alpha=0.5)+
+  geom_density(col="red") + 
+  labs(title="Histograma") +
+  labs(x="classes", y="Freq.Relativa")
+
+Grafico12
+
+```
+
+Row 
+-------------------------------------
+### Correlação
+
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+correlacao <- Base_iris %>% select("Sepal_Length","Sepal_Width","Petala_Length","Petala_Width") %>% cor()
+
+
+
+Grafico13 <- ggcorrplot(correlacao, hc.order = TRUE, 
+                 type = "lower", 
+                 lab = TRUE, 
+                 lab_size = 3, 
+                 method="circle", 
+                 colors = c("tomato2", "white", "springgreen3"), 
+                 title="Correlogram of mtcars", 
+                 ggtheme=theme_bw)
+Grafico13
+```
+
+Row 
+-------------------------------------
+### Correlação 2
+```{r,echo=FALSE,warning=FALSE,fig.align='center',warning=FALSE,message=FALSE}
+Grafico14 <- ggplot(Base_iris, aes(x=Sepal_Length, y=Sepal_Width)) + 
+  geom_point(aes(col=Petala_Length, size=Petala_Width*2)) + 
+  geom_smooth(method="loess", se=F) + 
+  labs(subtitle="Area Vs Population", 
+       y="Sepal_Width", 
+       x="Sepal_Length", 
+       title="Correlacao", 
+       caption = "IRIS")
+Grafico14
+
+```
+
